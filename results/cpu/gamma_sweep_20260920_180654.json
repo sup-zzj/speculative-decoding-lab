@@ -1,0 +1,458 @@
+{
+  "kind": "gamma_sweep",
+  "config": {
+    "models": {
+      "draft_model": "Qwen/Qwen2.5-0.5B",
+      "target_model": "Qwen/Qwen2.5-1.5B",
+      "device": "cpu",
+      "dtype": "float32",
+      "cache_dir": "models"
+    },
+    "sampling": {
+      "temperature": 0.0,
+      "top_k": 0,
+      "top_p": 1.0,
+      "mode": "greedy"
+    },
+    "prompts": [
+      "The key idea behind speculative decoding is",
+      "In a distributed system, exactly-once semantics requires",
+      "Photosynthesis converts light energy into chemical energy by"
+    ],
+    "max_new_tokens": 64,
+    "gamma": 6,
+    "gammas": [
+      1,
+      2,
+      3,
+      4,
+      6,
+      8,
+      12
+    ],
+    "repeats": 2,
+    "warmup_runs": 1,
+    "seed": 20260920,
+    "output_dir": "results/cpu"
+  },
+  "models": {
+    "draft": {
+      "name": "draft",
+      "parameters_M": 494.0,
+      "layers": 24,
+      "vocab_size": 151936,
+      "dtype": "float32",
+      "device": "cpu"
+    },
+    "target": {
+      "name": "target",
+      "parameters_M": 1543.7,
+      "layers": 28,
+      "vocab_size": 151936,
+      "dtype": "float32",
+      "device": "cpu"
+    }
+  },
+  "cost_ratio": {
+    "draft_ms_per_token": 157.5696,
+    "target_ms_per_token": 365.2523,
+    "cost_ratio": 0.4313993368419583
+  },
+  "baseline_ms_per_token": 382.9012,
+  "baseline_latency_ms": {
+    "mean": 24505.674849999996,
+    "std": 167.52978920837555,
+    "n": 2
+  },
+  "rows": [
+    {
+      "gamma": 1,
+      "acceptance_rate": {
+        "mean": 0.7105263157894737,
+        "std": 0.0,
+        "n": 2
+      },
+      "measured_speedup": 0.9719,
+      "predicted_speedup": 1.195002870102862,
+      "expected_tokens_per_round_measured": {
+        "mean": 1.7105263157894737,
+        "std": 0.45653154615160935,
+        "n": 76
+      },
+      "expected_tokens_per_round_theory": 1.7105263157894737,
+      "tokens_per_second": 2.54,
+      "ms_per_token": 393.9575,
+      "target_forward_calls": {
+        "mean": 39.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "latency_ms": {
+        "mean": 25213.27955000001,
+        "std": 142.2869256481544,
+        "n": 2
+      },
+      "peak_memory_mb": null,
+      "accepted_tokens_per_target_call": 0.043859649122807015
+    },
+    {
+      "gamma": 2,
+      "acceptance_rate": {
+        "mean": 0.6428571428571429,
+        "std": 0.0,
+        "n": 2
+      },
+      "measured_speedup": 0.8925,
+      "predicted_speedup": 1.103781357602834,
+      "expected_tokens_per_round_measured": {
+        "mean": 2.2857142857142856,
+        "std": 0.9286213772779853,
+        "n": 56
+      },
+      "expected_tokens_per_round_theory": 2.056122448979592,
+      "tokens_per_second": 2.33,
+      "ms_per_token": 429.0292,
+      "target_forward_calls": {
+        "mean": 29.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "latency_ms": {
+        "mean": 27457.865949999985,
+        "std": 445.8310376701472,
+        "n": 2
+      },
+      "peak_memory_mb": null,
+      "accepted_tokens_per_target_call": 0.07881773399014778
+    },
+    {
+      "gamma": 3,
+      "acceptance_rate": {
+        "mean": 0.5972222222222222,
+        "std": 0.0,
+        "n": 2
+      },
+      "measured_speedup": 0.861,
+      "predicted_speedup": 0.94451763206655,
+      "expected_tokens_per_round_measured": {
+        "mean": 2.7916666666666665,
+        "std": 1.3039764606499145,
+        "n": 48
+      },
+      "expected_tokens_per_round_theory": 2.1669104723936896,
+      "tokens_per_second": 2.25,
+      "ms_per_token": 444.7421,
+      "target_forward_calls": {
+        "mean": 25.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "latency_ms": {
+        "mean": 28463.49169999999,
+        "std": 219.28003538563954,
+        "n": 2
+      },
+      "peak_memory_mb": null,
+      "accepted_tokens_per_target_call": 0.11166666666666666
+    },
+    {
+      "gamma": 4,
+      "acceptance_rate": {
+        "mean": 0.5227272727272727,
+        "std": 0.0,
+        "n": 2
+      },
+      "measured_speedup": 0.7441,
+      "predicted_speedup": 0.7387243896072854,
+      "expected_tokens_per_round_measured": {
+        "mean": 3.090909090909091,
+        "std": 1.668005100351661,
+        "n": 44
+      },
+      "expected_tokens_per_round_theory": 2.0134652367495387,
+      "tokens_per_second": 1.94,
+      "ms_per_token": 514.5975,
+      "target_forward_calls": {
+        "mean": 23.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "latency_ms": {
+        "mean": 32934.24150000001,
+        "std": 903.1104169703988,
+        "n": 2
+      },
+      "peak_memory_mb": null,
+      "accepted_tokens_per_target_call": 0.13438735177865613
+    },
+    {
+      "gamma": 6,
+      "acceptance_rate": {
+        "mean": 0.39473684210526316,
+        "std": 0.0,
+        "n": 2
+      },
+      "measured_speedup": 0.6113,
+      "predicted_speedup": 0.45973372914410715,
+      "expected_tokens_per_round_measured": {
+        "mean": 3.3684210526315788,
+        "std": 2.161344084211401,
+        "n": 38
+      },
+      "expected_tokens_per_round_theory": 1.6497066844039971,
+      "tokens_per_second": 1.6,
+      "ms_per_token": 626.417,
+      "target_forward_calls": {
+        "mean": 20.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "latency_ms": {
+        "mean": 40090.687999999944,
+        "std": 1978.7072295533403,
+        "n": 2
+      },
+      "peak_memory_mb": null,
+      "accepted_tokens_per_target_call": 0.16842105263157894
+    },
+    {
+      "gamma": 8,
+      "acceptance_rate": {
+        "mean": 0.3355263157894737,
+        "std": 0.0,
+        "n": 2
+      },
+      "measured_speedup": 0.6104,
+      "predicted_speedup": 0.33808213090237055,
+      "expected_tokens_per_round_measured": {
+        "mean": 3.6842105263157894,
+        "std": 2.7519552082100303,
+        "n": 38
+      },
+      "expected_tokens_per_round_theory": 1.504869387457561,
+      "tokens_per_second": 1.59,
+      "ms_per_token": 627.343,
+      "target_forward_calls": {
+        "mean": 20.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "latency_ms": {
+        "mean": 40149.94915000006,
+        "std": 6.863249128887204,
+        "n": 2
+      },
+      "peak_memory_mb": null,
+      "accepted_tokens_per_target_call": 0.18421052631578946
+    },
+    {
+      "gamma": 12,
+      "acceptance_rate": {
+        "mean": 0.2361111111111111,
+        "std": 0.0,
+        "n": 2
+      },
+      "measured_speedup": 0.4398,
+      "predicted_speedup": 0.21193702020223443,
+      "expected_tokens_per_round_measured": {
+        "mean": 3.8333333333333335,
+        "std": 3.6134668750581973,
+        "n": 36
+      },
+      "expected_tokens_per_round_theory": 1.3090908998122903,
+      "tokens_per_second": 1.15,
+      "ms_per_token": 870.6767,
+      "target_forward_calls": {
+        "mean": 19.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "latency_ms": {
+        "mean": 55723.31185000001,
+        "std": 1472.408945439505,
+        "n": 2
+      },
+      "peak_memory_mb": null,
+      "accepted_tokens_per_target_call": 0.2017543859649123
+    }
+  ],
+  "analysis": {
+    "gammas": [
+      1,
+      2,
+      3,
+      4,
+      6,
+      8,
+      12
+    ],
+    "measured_speedup": [
+      0.9719,
+      0.8925,
+      0.861,
+      0.7441,
+      0.6113,
+      0.6104,
+      0.4398
+    ],
+    "predicted_speedup": [
+      1.195002870102862,
+      1.103781357602834,
+      0.94451763206655,
+      0.7387243896072854,
+      0.45973372914410715,
+      0.33808213090237055,
+      0.21193702020223443
+    ],
+    "mean_acceptance_rate": 0.49138674608599425,
+    "best_gamma_measured": 1,
+    "best_gamma_predicted": 1,
+    "best_speedup_measured": 0.9719,
+    "best_speedup_predicted": 1.195002870102862,
+    "pearson_measured_vs_predicted": 0.9831107882728067,
+    "relative_error_at_best": 0.22955331834845366,
+    "cost_ratio": 0.4313993368419583,
+    "marginal": [
+      {
+        "gamma": 1,
+        "expected_tokens_per_round": 1.491386746085994,
+        "relative_cost": 1.4313993368419582,
+        "predicted_speedup": 1.0419082276343536,
+        "marginal_tokens": null,
+        "marginal_speedup_gain": null,
+        "tokens_per_extra_target_step": null
+      },
+      {
+        "gamma": 2,
+        "expected_tokens_per_round": 1.7328476803149755,
+        "relative_cost": 1.8627986736839166,
+        "predicted_speedup": 0.9302388415856305,
+        "marginal_tokens": 0.24146093422898152,
+        "marginal_speedup_gain": -0.11166938604872312,
+        "tokens_per_extra_target_step": 0.5597155897285022
+      },
+      {
+        "gamma": 3,
+        "expected_tokens_per_round": 1.8514983830926388,
+        "relative_cost": 2.294198010525875,
+        "predicted_speedup": 0.8070351271328315,
+        "marginal_tokens": 0.11865070277766332,
+        "marginal_speedup_gain": -0.12320371445279898,
+        "tokens_per_extra_target_step": 0.27503682237029164
+      },
+      {
+        "gamma": 4,
+        "expected_tokens_per_round": 1.9098017658513715,
+        "relative_cost": 2.725597347367833,
+        "predicted_speedup": 0.7006910861927963,
+        "marginal_tokens": 0.0583033827587327,
+        "marginal_speedup_gain": -0.10634404094003524,
+        "tokens_per_extra_target_step": 0.1351494491983699
+      },
+      {
+        "gamma": 6,
+        "expected_tokens_per_round": 1.9525292646606245,
+        "relative_cost": 3.58839602105175,
+        "predicted_speedup": 0.5441231272150232,
+        "marginal_tokens": 0.04272749880925297,
+        "marginal_speedup_gain": -0.1565679589777731,
+        "tokens_per_extra_target_step": 0.04952198017043549
+      },
+      {
+        "gamma": 8,
+        "expected_tokens_per_round": 1.9628462864403746,
+        "relative_cost": 4.451194694735666,
+        "predicted_speedup": 0.440970665417487,
+        "marginal_tokens": 0.010317021779750135,
+        "marginal_speedup_gain": -0.10315246179753623,
+        "tokens_per_extra_target_step": 0.01195762359682271
+      },
+      {
+        "gamma": 12,
+        "expected_tokens_per_round": 1.9659389614275287,
+        "relative_cost": 6.1767920421035,
+        "predicted_speedup": 0.31827831470234025,
+        "marginal_tokens": 0.0030926749871540427,
+        "marginal_speedup_gain": -0.12269235071514673,
+        "tokens_per_extra_target_step": 0.0017922344351487918
+      }
+    ],
+    "analytic_optimum": {
+      "gamma_star": 1,
+      "speedup_star": 1.0419082276343536,
+      "speedup_at_gamma_1": 1.0419082276343536,
+      "plateau_speedup": 1.3735722715550636,
+      "curve": {
+        "gamma": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32
+        ],
+        "predicted_speedup": [
+          1.0419082276343536,
+          0.9302388415856305,
+          0.8070351271328315,
+          0.7006910861927963,
+          0.6140175202230829,
+          0.5441231272150232,
+          0.48744944146260577,
+          0.440970665417487,
+          0.40235101199395723,
+          0.3698419075638173,
+          0.3421421080312679,
+          0.31827831470234025,
+          0.2975150440593466,
+          0.27928956152808404,
+          0.26316561872738414,
+          0.24880060674567517,
+          0.23592210187345075,
+          0.2243109593118034,
+          0.21378898807835756,
+          0.2042098562724539,
+          0.19545229742360173,
+          0.1874149746188536,
+          0.18001255306130357,
+          0.17317266389866398,
+          0.16683353295594805,
+          0.16094211096777253,
+          0.15545258602490902,
+          0.1503251902026057,
+          0.1455252347195436,
+          0.1410223241770784,
+          0.13678971227789039,
+          0.132803770176959
+        ]
+      }
+    }
+  },
+  "timestamp": "20260920_180654"
+}

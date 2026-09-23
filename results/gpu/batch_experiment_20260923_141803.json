@@ -1,0 +1,159 @@
+{
+  "kind": "batch_experiment",
+  "mode": "same_sequence_batch",
+  "config": {
+    "models": {
+      "draft_model": "Qwen/Qwen2.5-0.5B",
+      "target_model": "Qwen/Qwen2.5-1.5B",
+      "device": "auto",
+      "dtype": "auto",
+      "cache_dir": "models"
+    },
+    "sampling": {
+      "temperature": 0.0,
+      "top_k": 0,
+      "top_p": 1.0,
+      "mode": "greedy"
+    },
+    "prompts": [
+      "The key idea behind speculative decoding is",
+      "In a distributed system, exactly-once semantics requires",
+      "Photosynthesis converts light energy into chemical energy by"
+    ],
+    "max_new_tokens": 64,
+    "gamma": 6,
+    "gammas": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      8,
+      10,
+      12
+    ],
+    "repeats": 3,
+    "warmup_runs": 1,
+    "seed": 20260920,
+    "output_dir": "results/gpu"
+  },
+  "models": {
+    "draft": {
+      "name": "draft",
+      "parameters_M": 494.0,
+      "layers": 24,
+      "vocab_size": 151936,
+      "dtype": "float16",
+      "device": "cuda"
+    },
+    "target": {
+      "name": "target",
+      "parameters_M": 1543.7,
+      "layers": 28,
+      "vocab_size": 151936,
+      "dtype": "float16",
+      "device": "cuda"
+    }
+  },
+  "gamma": 6,
+  "max_new_tokens": 64,
+  "prompt": "The key idea behind speculative decoding is",
+  "prompt_tokens": 7,
+  "rows": [
+    {
+      "batch_size": 1,
+      "cost_ratio": 1.078662639729627,
+      "draft_ms_per_token_slot": 51.077340625,
+      "target_ms_per_token_slot": 47.35247031249995,
+      "baseline_ms_per_token_slot": {
+        "mean": 47.60428593750001,
+        "std": 0.6049412411681736,
+        "n": 3
+      },
+      "speculative_latency_ms": {
+        "mean": 6290.9579,
+        "std": 113.95510044381756,
+        "n": 3
+      },
+      "speculative_ms_per_token_slot": 98.2962,
+      "speedup": 0.4843,
+      "per_slot_throughput_spec": 10.17,
+      "baseline_per_slot_throughput": 21.01,
+      "acceptance_rate": {
+        "mean": 0.3947368421052631,
+        "std": 6.798699777552591e-17,
+        "n": 3
+      },
+      "rounds": {
+        "mean": 19.0,
+        "std": 0.0,
+        "n": 3
+      },
+      "peak_memory_mb": 3920.82
+    },
+    {
+      "batch_size": 2,
+      "cost_ratio": 0.8849521934905145,
+      "draft_ms_per_token_slot": 40.4744265625,
+      "target_ms_per_token_slot": 45.73628593750001,
+      "baseline_ms_per_token_slot": {
+        "mean": 46.427552083333346,
+        "std": 0.6822178577445489,
+        "n": 3
+      },
+      "speculative_latency_ms": {
+        "mean": 6449.660333333332,
+        "std": 288.77565491478157,
+        "n": 3
+      },
+      "speculative_ms_per_token_slot": 100.7759,
+      "speedup": 0.4607,
+      "per_slot_throughput_spec": 9.92,
+      "baseline_per_slot_throughput": 21.54,
+      "acceptance_rate": {
+        "mean": 0.3947368421052631,
+        "std": 6.798699777552591e-17,
+        "n": 3
+      },
+      "rounds": {
+        "mean": 19.0,
+        "std": 0.0,
+        "n": 3
+      },
+      "peak_memory_mb": 3925.85
+    },
+    {
+      "batch_size": 4,
+      "cost_ratio": 0.8467949621462019,
+      "draft_ms_per_token_slot": 39.755071874999935,
+      "target_ms_per_token_slot": 46.947695312500095,
+      "baseline_ms_per_token_slot": {
+        "mean": 46.43573749999996,
+        "std": 0.25717079546386695,
+        "n": 3
+      },
+      "speculative_latency_ms": {
+        "mean": 6487.203733333321,
+        "std": 71.80616221204924,
+        "n": 3
+      },
+      "speculative_ms_per_token_slot": 101.3626,
+      "speedup": 0.4581,
+      "per_slot_throughput_spec": 9.87,
+      "baseline_per_slot_throughput": 21.54,
+      "acceptance_rate": {
+        "mean": 0.3947368421052631,
+        "std": 6.798699777552591e-17,
+        "n": 3
+      },
+      "rounds": {
+        "mean": 19.0,
+        "std": 0.0,
+        "n": 3
+      },
+      "peak_memory_mb": 3936.6
+    }
+  ],
+  "timestamp": "20260923_141803"
+}

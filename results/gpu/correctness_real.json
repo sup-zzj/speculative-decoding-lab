@@ -1,0 +1,330 @@
+{
+  "kind": "correctness",
+  "timestamp": "20260920_183804",
+  "mode": "real",
+  "gamma": 4,
+  "num_samples": 2000,
+  "sampling": {
+    "temperature": 1.0,
+    "top_k": 0,
+    "top_p": 1.0,
+    "mode": "sampling"
+  },
+  "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "torch_version": "2.4.1+cu124",
+  "reports": [
+    {
+      "name": "greedy_equivalence",
+      "num_samples": 1,
+      "passed": true,
+      "metrics": {
+        "gamma": 4,
+        "max_new_tokens": 32,
+        "reference_tokens": 32,
+        "speculative_tokens": 32,
+        "first_mismatch_index": null,
+        "exact_match": true
+      },
+      "notes": [
+        "greedy decoding is deterministic, so an exact match is required"
+      ]
+    },
+    {
+      "name": "first_token_test_prompt0",
+      "num_samples": 2000,
+      "passed": true,
+      "metrics": {
+        "gamma": 4,
+        "kl_speculative_vs_target": 0.26609035550012067,
+        "tv_speculative_vs_target": 0.08606927404262914,
+        "kl_noise_floor": 0.16447930653205528,
+        "tv_noise_floor": 0.07338346054743747,
+        "chi_square": {
+          "statistic": 10.109078967519693,
+          "p_value": 0.7541658445246036,
+          "dof": 14
+        },
+        "sampling_mode": "T=1.00",
+        "top_token_ids": [
+          429,
+          311,
+          279,
+          438,
+          3118,
+          264,
+          1667,
+          4285,
+          419,
+          25,
+          70601,
+          11,
+          1602,
+          4936,
+          304,
+          537,
+          458,
+          4428,
+          320,
+          510
+        ],
+        "target_probs_top": [
+          0.4569425582885742,
+          0.31405171751976013,
+          0.0722988173365593,
+          0.011988317593932152,
+          0.010254152119159698,
+          0.009049256332218647,
+          0.0053197843953967094,
+          0.004997474141418934,
+          0.004015583544969559,
+          0.004015583544969559,
+          0.003277423558756709,
+          0.00275986734777689,
+          0.002674955176189542,
+          0.002149387029930949,
+          0.002083257306367159,
+          0.0019266981398686767,
+          0.0017542785499244928,
+          0.0015972888795658946,
+          0.0014096024679020047,
+          0.0012246837140992284
+        ],
+        "speculative_probs_top": [
+          0.4445,
+          0.3175,
+          0.083,
+          0.0105,
+          0.0095,
+          0.0115,
+          0.003,
+          0.0065,
+          0.003,
+          0.0035,
+          0.003,
+          0.0035,
+          0.002,
+          0.003,
+          0.004,
+          0.0005,
+          0.001,
+          0.001,
+          0.001,
+          0.002
+        ],
+        "monte_carlo_samples": 2000
+      },
+      "notes": [
+        "TV is bounded below by the Monte-Carlo noise floor; the pass criterion allows three times that floor, capped at 0.05"
+      ]
+    },
+    {
+      "name": "greedy_equivalence",
+      "num_samples": 1,
+      "passed": true,
+      "metrics": {
+        "gamma": 4,
+        "max_new_tokens": 32,
+        "reference_tokens": 32,
+        "speculative_tokens": 32,
+        "first_mismatch_index": null,
+        "exact_match": true
+      },
+      "notes": [
+        "greedy decoding is deterministic, so an exact match is required"
+      ]
+    },
+    {
+      "name": "first_token_test_prompt1",
+      "num_samples": 2000,
+      "passed": true,
+      "metrics": {
+        "gamma": 4,
+        "kl_speculative_vs_target": 0.1277837701469138,
+        "tv_speculative_vs_target": 0.04970801415112624,
+        "kl_noise_floor": 0.09290292206806547,
+        "tv_noise_floor": 0.05081926129068163,
+        "chi_square": {
+          "statistic": 8.149651476696393,
+          "p_value": 0.8337158383474261,
+          "dof": 13
+        },
+        "sampling_mode": "T=1.00",
+        "top_token_ids": [
+          429,
+          22573,
+          1817,
+          264,
+          279,
+          678,
+          1449,
+          6605,
+          518,
+          20337,
+          458,
+          1378,
+          1943,
+          24510,
+          8692,
+          6896,
+          2176,
+          902,
+          15440,
+          23988
+        ],
+        "target_probs_top": [
+          0.7657322287559509,
+          0.03525853529572487,
+          0.03312232717871666,
+          0.03260881081223488,
+          0.019471611827611923,
+          0.016654951497912407,
+          0.015403310768306255,
+          0.006032024044543505,
+          0.003894567023962736,
+          0.0026766944210976362,
+          0.0026351958513259888,
+          0.0025943410582840443,
+          0.0023621744476258755,
+          0.0021507844794541597,
+          0.0020522926934063435,
+          0.0018980605527758598,
+          0.0017282037297263741,
+          0.0015251344302669168,
+          0.0014327311655506492,
+          0.0013045166851952672
+        ],
+        "speculative_probs_top": [
+          0.759,
+          0.036,
+          0.0275,
+          0.0365,
+          0.022,
+          0.021,
+          0.017,
+          0.005,
+          0.004,
+          0.0035,
+          0.0025,
+          0.0035,
+          0.0025,
+          0.0025,
+          0.0005,
+          0.0005,
+          0.0045,
+          0.0025,
+          0.0025,
+          0.0
+        ],
+        "monte_carlo_samples": 2000
+      },
+      "notes": [
+        "TV is bounded below by the Monte-Carlo noise floor; the pass criterion allows three times that floor, capped at 0.05"
+      ]
+    },
+    {
+      "name": "greedy_equivalence",
+      "num_samples": 1,
+      "passed": true,
+      "metrics": {
+        "gamma": 4,
+        "max_new_tokens": 32,
+        "reference_tokens": 32,
+        "speculative_tokens": 32,
+        "first_mismatch_index": null,
+        "exact_match": true
+      },
+      "notes": [
+        "greedy decoding is deterministic, so an exact match is required"
+      ]
+    },
+    {
+      "name": "first_token_test_prompt2",
+      "num_samples": 2000,
+      "passed": true,
+      "metrics": {
+        "gamma": 4,
+        "kl_speculative_vs_target": 0.23230482770673733,
+        "tv_speculative_vs_target": 0.12545224316550296,
+        "kl_noise_floor": 0.17731884153662733,
+        "tv_noise_floor": 0.12073023042865333,
+        "chi_square": {
+          "statistic": 36.43799541432313,
+          "p_value": 0.01365456479511478,
+          "dof": 20
+        },
+        "sampling_mode": "T=1.00",
+        "top_token_ids": [
+          1667,
+          279,
+          34171,
+          33437,
+          3363,
+          29064,
+          17387,
+          892,
+          34888,
+          69175,
+          264,
+          44373,
+          17719,
+          39780,
+          198,
+          51289,
+          14719,
+          510,
+          30743,
+          1304
+        ],
+        "target_probs_top": [
+          0.1911320835351944,
+          0.09610724449157715,
+          0.07368797808885574,
+          0.05562260374426842,
+          0.044001102447509766,
+          0.033213771879673004,
+          0.03169280290603638,
+          0.03024148941040039,
+          0.02627425827085972,
+          0.02212514355778694,
+          0.021444423124194145,
+          0.020462412387132645,
+          0.019525371491909027,
+          0.018058016896247864,
+          0.012029232457280159,
+          0.011478373780846596,
+          0.011478373780846596,
+          0.010782934725284576,
+          0.009972583502531052,
+          0.009368374943733215
+        ],
+        "speculative_probs_top": [
+          0.1795,
+          0.096,
+          0.0765,
+          0.047,
+          0.0375,
+          0.0445,
+          0.033,
+          0.036,
+          0.022,
+          0.03,
+          0.025,
+          0.02,
+          0.0165,
+          0.0135,
+          0.012,
+          0.0135,
+          0.0065,
+          0.012,
+          0.0065,
+          0.01
+        ],
+        "monte_carlo_samples": 2000
+      },
+      "notes": [
+        "TV is bounded below by the Monte-Carlo noise floor; the pass criterion allows three times that floor, capped at 0.05"
+      ]
+    }
+  ],
+  "all_passed": true
+}

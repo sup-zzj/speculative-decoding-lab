@@ -1,0 +1,375 @@
+{
+  "kind": "benchmark",
+  "mode": "cuda_graph",
+  "config": {
+    "models": {
+      "draft_model": "Qwen/Qwen2.5-1.5B",
+      "target_model": "Qwen/Qwen2.5-3B",
+      "device": "cuda",
+      "dtype": "auto",
+      "cache_dir": "models"
+    },
+    "sampling": {
+      "temperature": 0.0,
+      "top_k": 0,
+      "top_p": 1.0,
+      "mode": "greedy"
+    },
+    "prompts": [
+      "The key idea behind speculative decoding is",
+      "In a distributed system, exactly-once semantics requires",
+      "Photosynthesis converts light energy into chemical energy by"
+    ],
+    "max_new_tokens": 64,
+    "gamma": 6,
+    "gammas": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      8,
+      10,
+      12
+    ],
+    "repeats": 3,
+    "warmup_runs": 1,
+    "seed": 20260920,
+    "output_dir": "results/gpu"
+  },
+  "models": {
+    "draft": {
+      "name": "draft",
+      "parameters_M": 1543.7,
+      "layers": 28,
+      "vocab_size": 151936,
+      "dtype": "float16",
+      "device": "cuda"
+    },
+    "target": {
+      "name": "target",
+      "parameters_M": 3085.9,
+      "layers": 36,
+      "vocab_size": 151936,
+      "dtype": "float16",
+      "device": "cuda"
+    }
+  },
+  "per_prompt": [
+    {
+      "prompt": "The key idea behind speculative decoding is",
+      "prompt_tokens": 7,
+      "baseline": {
+        "latency_ms": {
+          "mean": 34586.4827,
+          "std": 6.999379563219269,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 1.85,
+        "ms_per_token": 540.4138,
+        "peak_memory_mb": 8952.42
+      },
+      "speculative": {
+        "gamma": 6,
+        "latency_ms": {
+          "mean": 8927.5833,
+          "std": 19.64063739265807,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 7.17,
+        "ms_per_token": 139.4935,
+        "peak_memory_mb": 9060.85,
+        "acceptance_rate": {
+          "mean": 0.5444444444444444,
+          "std": 0.0,
+          "n": 3
+        },
+        "mean_tokens_per_round": {
+          "mean": 4.266666666666667,
+          "std": 1.7888543819998317,
+          "n": 45
+        },
+        "expected_tokens_per_round_theory": 2.1639952105896985,
+        "target_forward_calls": {
+          "mean": 16.0,
+          "std": 0.0,
+          "n": 3
+        },
+        "draft_forward_calls": {
+          "mean": 279.0,
+          "std": 93.0,
+          "n": 3
+        },
+        "tokens_per_round_hist": [
+          7,
+          3,
+          2,
+          4,
+          2,
+          5,
+          2,
+          6,
+          2,
+          6,
+          6,
+          4,
+          4,
+          4,
+          7,
+          7,
+          3,
+          2,
+          4,
+          2,
+          5,
+          2,
+          6,
+          2,
+          6,
+          6,
+          4,
+          4,
+          4,
+          7,
+          7,
+          3,
+          2,
+          4,
+          2,
+          5,
+          2,
+          6,
+          2,
+          6,
+          6,
+          4,
+          4,
+          4,
+          7
+        ],
+        "sample_text": " that the decoder can make a guess about the most likely sequence of symbols that produced the observed sequence of symbols. The decoder can then use this guess to make a better guess about the next symbol to be decoded. This process is repeated until the entire sequence of symbols has been decoded.\nThe key idea behind speculative decoding is that"
+      },
+      "speedup": 3.8741
+    },
+    {
+      "prompt": "In a distributed system, exactly-once semantics requires",
+      "prompt_tokens": 10,
+      "baseline": {
+        "latency_ms": {
+          "mean": 34646.86103333333,
+          "std": 8.783817829575542,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 1.85,
+        "ms_per_token": 541.3572,
+        "peak_memory_mb": 9042.98
+      },
+      "speculative": {
+        "gamma": 6,
+        "latency_ms": {
+          "mean": 11075.286566666668,
+          "std": 119.88737983734383,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 5.78,
+        "ms_per_token": 173.0514,
+        "peak_memory_mb": 9072.21,
+        "acceptance_rate": {
+          "mean": 0.4473684210526316,
+          "std": 0.0,
+          "n": 3
+        },
+        "mean_tokens_per_round": {
+          "mean": 3.6842105263157894,
+          "std": 2.269029801611584,
+          "n": 57
+        },
+        "expected_tokens_per_round_theory": 1.8030341550384614,
+        "target_forward_calls": {
+          "mean": 20.0,
+          "std": 0.0,
+          "n": 3
+        },
+        "draft_forward_calls": {
+          "mean": 357.0,
+          "std": 119.0,
+          "n": 3
+        },
+        "tokens_per_round_hist": [
+          7,
+          1,
+          7,
+          3,
+          4,
+          3,
+          2,
+          4,
+          2,
+          7,
+          2,
+          1,
+          3,
+          1,
+          5,
+          7,
+          3,
+          1,
+          7,
+          7,
+          1,
+          7,
+          3,
+          4,
+          3,
+          2,
+          4,
+          2,
+          7,
+          2,
+          1,
+          3,
+          1,
+          5,
+          7,
+          3,
+          1,
+          7,
+          7,
+          1,
+          7,
+          3,
+          4,
+          3,
+          2,
+          4,
+          2,
+          7,
+          2,
+          1,
+          3,
+          1,
+          5,
+          7,
+          3,
+          1,
+          7
+        ],
+        "sample_text": " that each message is delivered exactly once to its intended recipient. Suppose a system uses a sequence of messages to update a shared counter. Each message is sent from a node to another node, and the counter is updated based on the message received. If the system starts with a counter value of 0 and receives messages with values"
+      },
+      "speedup": 3.1283
+    },
+    {
+      "prompt": "Photosynthesis converts light energy into chemical energy by",
+      "prompt_tokens": 9,
+      "baseline": {
+        "latency_ms": {
+          "mean": 34729.67999999997,
+          "std": 48.59878948150604,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 1.84,
+        "ms_per_token": 542.6512,
+        "peak_memory_mb": 9052.87
+      },
+      "speculative": {
+        "gamma": 6,
+        "latency_ms": {
+          "mean": 6396.601000000032,
+          "std": 16.63582452809652,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 10.01,
+        "ms_per_token": 99.9469,
+        "peak_memory_mb": 9079.29,
+        "acceptance_rate": {
+          "mean": 0.8181818181818182,
+          "std": 0.0,
+          "n": 3
+        },
+        "mean_tokens_per_round": {
+          "mean": 5.909090909090909,
+          "std": 1.6462767910431322,
+          "n": 33
+        },
+        "expected_tokens_per_round_theory": 4.150069345622308,
+        "target_forward_calls": {
+          "mean": 12.0,
+          "std": 0.0,
+          "n": 3
+        },
+        "draft_forward_calls": {
+          "mean": 222.0,
+          "std": 74.0,
+          "n": 3
+        },
+        "tokens_per_round_hist": [
+          3,
+          7,
+          6,
+          4,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          3,
+          3,
+          7,
+          6,
+          4,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          3,
+          3,
+          7,
+          6,
+          4,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          3
+        ],
+        "sample_text": " using water and carbon dioxide to produce glucose and oxygen. The chemical equation for photosynthesis is:\n\n{eq}6CO_2 + 6H_2O \\rightarrow C_6H_{12}O_6 + 6O_2\n\n{/eq}\n\nIf 100 grams of glucose"
+      },
+      "speedup": 5.4294
+    }
+  ],
+  "aggregate": {
+    "speedup": {
+      "mean": 4.143933333333333,
+      "std": 1.174041235789158,
+      "n": 3
+    },
+    "acceptance_rate": {
+      "mean": 0.603331561226298,
+      "std": 0.1922925200437649,
+      "n": 3
+    },
+    "baseline_latency_ms": {
+      "mean": 34654.34124444443,
+      "std": 71.89111106750566,
+      "n": 3
+    },
+    "speculative_latency_ms": {
+      "mean": 8799.823622222233,
+      "std": 2341.9578474821196,
+      "n": 3
+    }
+  },
+  "timestamp": "20260922_211522"
+}

@@ -1,0 +1,431 @@
+{
+  "kind": "benchmark",
+  "config": {
+    "models": {
+      "draft_model": "Qwen/Qwen2.5-0.5B",
+      "target_model": "Qwen/Qwen2.5-1.5B",
+      "device": "cpu",
+      "dtype": "float32",
+      "cache_dir": "models"
+    },
+    "sampling": {
+      "temperature": 0.0,
+      "top_k": 0,
+      "top_p": 1.0,
+      "mode": "greedy"
+    },
+    "prompts": [
+      "The key idea behind speculative decoding is",
+      "In a distributed system, exactly-once semantics requires",
+      "Photosynthesis converts light energy into chemical energy by"
+    ],
+    "max_new_tokens": 64,
+    "gamma": 6,
+    "gammas": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      8,
+      10,
+      12
+    ],
+    "repeats": 3,
+    "warmup_runs": 1,
+    "seed": 20260920,
+    "output_dir": "results/cpu"
+  },
+  "models": {
+    "draft": {
+      "name": "draft",
+      "parameters_M": 494.0,
+      "layers": 24,
+      "vocab_size": 151936,
+      "dtype": "float32",
+      "device": "cpu"
+    },
+    "target": {
+      "name": "target",
+      "parameters_M": 1543.7,
+      "layers": 28,
+      "vocab_size": 151936,
+      "dtype": "float32",
+      "device": "cpu"
+    }
+  },
+  "per_prompt": [
+    {
+      "prompt": "The key idea behind speculative decoding is",
+      "prompt_tokens": 7,
+      "baseline": {
+        "latency_ms": {
+          "mean": 25429.574399999994,
+          "std": 374.00896857531484,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 2.52,
+        "ms_per_token": 397.3371,
+        "peak_memory_mb": null
+      },
+      "speculative": {
+        "gamma": 6,
+        "latency_ms": {
+          "mean": 40368.65003333333,
+          "std": 761.9213386900332,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 1.59,
+        "ms_per_token": 630.7602,
+        "peak_memory_mb": null,
+        "acceptance_rate": {
+          "mean": 0.3947368421052631,
+          "std": 6.798699777552591e-17,
+          "n": 3
+        },
+        "mean_tokens_per_round": {
+          "mean": 3.3684210526315788,
+          "std": 2.151673592374155,
+          "n": 57
+        },
+        "expected_tokens_per_round_theory": 1.6497066844039971,
+        "target_forward_calls": {
+          "mean": 20.0,
+          "std": 0.0,
+          "n": 3
+        },
+        "draft_forward_calls": {
+          "mean": 118.0,
+          "std": 0.0,
+          "n": 3
+        },
+        "tokens_per_round_hist": [
+          5,
+          2,
+          3,
+          1,
+          1,
+          3,
+          4,
+          1,
+          3,
+          1,
+          1,
+          3,
+          6,
+          1,
+          4,
+          4,
+          7,
+          7,
+          7,
+          5,
+          2,
+          3,
+          1,
+          1,
+          3,
+          4,
+          1,
+          3,
+          1,
+          1,
+          3,
+          6,
+          1,
+          4,
+          4,
+          7,
+          7,
+          7,
+          5,
+          2,
+          3,
+          1,
+          1,
+          3,
+          4,
+          1,
+          3,
+          1,
+          1,
+          3,
+          6,
+          1,
+          4,
+          4,
+          7,
+          7,
+          7
+        ],
+        "sample_text": " that the decoder can make a guess about the next symbol in the sequence, and then use the received symbols to update the guess. This process is repeated until the decoder is confident that it has decoded the entire sequence.\nThe key idea behind speculative decoding is that the decoder can make a guess about the next symbol in the sequence"
+      },
+      "speedup": 0.6299
+    },
+    {
+      "prompt": "In a distributed system, exactly-once semantics requires",
+      "prompt_tokens": 10,
+      "baseline": {
+        "latency_ms": {
+          "mean": 25963.275333333342,
+          "std": 1392.4577738425248,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 2.47,
+        "ms_per_token": 405.6762,
+        "peak_memory_mb": null
+      },
+      "speculative": {
+        "gamma": 6,
+        "latency_ms": {
+          "mean": 50865.968633333316,
+          "std": 785.2722151358661,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 1.26,
+        "ms_per_token": 794.7808,
+        "peak_memory_mb": null,
+        "acceptance_rate": {
+          "mean": 0.3055555555555556,
+          "std": 0.0,
+          "n": 3
+        },
+        "mean_tokens_per_round": {
+          "mean": 2.8333333333333335,
+          "std": 1.876466562602004,
+          "n": 72
+        },
+        "expected_tokens_per_round_theory": 1.4396419086892112,
+        "target_forward_calls": {
+          "mean": 25.0,
+          "std": 0.0,
+          "n": 3
+        },
+        "draft_forward_calls": {
+          "mean": 146.0,
+          "std": 0.0,
+          "n": 3
+        },
+        "tokens_per_round_hist": [
+          3,
+          3,
+          2,
+          1,
+          2,
+          2,
+          2,
+          2,
+          2,
+          5,
+          1,
+          7,
+          4,
+          4,
+          6,
+          1,
+          1,
+          2,
+          1,
+          1,
+          4,
+          4,
+          1,
+          7,
+          3,
+          3,
+          2,
+          1,
+          2,
+          2,
+          2,
+          2,
+          2,
+          5,
+          1,
+          7,
+          4,
+          4,
+          6,
+          1,
+          1,
+          2,
+          1,
+          1,
+          4,
+          4,
+          1,
+          7,
+          3,
+          3,
+          2,
+          1,
+          2,
+          2,
+          2,
+          2,
+          2,
+          5,
+          1,
+          7,
+          4,
+          4,
+          6,
+          1,
+          1,
+          2,
+          1,
+          1,
+          4,
+          4,
+          1,
+          7
+        ],
+        "sample_text": " that each message is delivered exactly once, even if it is lost or duplicated. Consider a system where messages are sent between two nodes, A and B, in a network. The system uses a protocol that ensures exactly-once delivery by using a sequence number for each message. The sequence number is incremented by 1 for"
+      },
+      "speedup": 0.5104
+    },
+    {
+      "prompt": "Photosynthesis converts light energy into chemical energy by",
+      "prompt_tokens": 9,
+      "baseline": {
+        "latency_ms": {
+          "mean": 26055.299933333346,
+          "std": 394.76086771961576,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 2.46,
+        "ms_per_token": 407.1141,
+        "peak_memory_mb": null
+      },
+      "speculative": {
+        "gamma": 6,
+        "latency_ms": {
+          "mean": 45168.28376666664,
+          "std": 512.5990316121429,
+          "n": 3
+        },
+        "tokens": 64,
+        "tokens_per_second": 1.42,
+        "ms_per_token": 705.7544,
+        "peak_memory_mb": null,
+        "acceptance_rate": {
+          "mean": 0.38095238095238093,
+          "std": 0.0,
+          "n": 3
+        },
+        "mean_tokens_per_round": {
+          "mean": 3.2857142857142856,
+          "std": 2.3720725348519762,
+          "n": 63
+        },
+        "expected_tokens_per_round_theory": 1.6135036933756162,
+        "target_forward_calls": {
+          "mean": 22.0,
+          "std": 0.0,
+          "n": 3
+        },
+        "draft_forward_calls": {
+          "mean": 131.0,
+          "std": 0.0,
+          "n": 3
+        },
+        "tokens_per_round_hist": [
+          1,
+          1,
+          1,
+          2,
+          5,
+          2,
+          3,
+          1,
+          7,
+          3,
+          7,
+          7,
+          2,
+          7,
+          2,
+          2,
+          1,
+          1,
+          2,
+          5,
+          7,
+          1,
+          1,
+          1,
+          2,
+          5,
+          2,
+          3,
+          1,
+          7,
+          3,
+          7,
+          7,
+          2,
+          7,
+          2,
+          2,
+          1,
+          1,
+          2,
+          5,
+          7,
+          1,
+          1,
+          1,
+          2,
+          5,
+          2,
+          3,
+          1,
+          7,
+          3,
+          7,
+          7,
+          2,
+          7,
+          2,
+          2,
+          1,
+          1,
+          2,
+          5,
+          7
+        ],
+        "sample_text": " using water as a reducing agent. The chemical equation for this process is:\n\n6CO2 + 6H2O + light energy → C6H12O6 + 6O2\n\nIf a plant absorbs 1200 grams of water and 1000 grams of carbon dioxide,"
+      },
+      "speedup": 0.5768
+    }
+  ],
+  "aggregate": {
+    "speedup": {
+      "mean": 0.5723666666666666,
+      "std": 0.059873227183218844,
+      "n": 3
+    },
+    "acceptance_rate": {
+      "mean": 0.36041492620439985,
+      "std": 0.04800693442940601,
+      "n": 3
+    },
+    "baseline_latency_ms": {
+      "mean": 25816.049888888894,
+      "std": 337.8455407212384,
+      "n": 3
+    },
+    "speculative_latency_ms": {
+      "mean": 45467.634144444426,
+      "std": 5255.057795494088,
+      "n": 3
+    }
+  },
+  "timestamp": "20260920_174935"
+}

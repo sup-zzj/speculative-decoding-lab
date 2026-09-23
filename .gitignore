@@ -1,0 +1,32 @@
+# Model weights / HF cache
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Local wheels / package build scratch (large, not source)
+wheelhouse/
+
+# Experiment artifacts
+results/*.json
+results/*.csv
+results/*.log
+!results/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
