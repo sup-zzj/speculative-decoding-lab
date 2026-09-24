@@ -13,6 +13,7 @@ results/*.json
 results/*.csv
 results/*.log
 !results/.gitkeep
+!results/correctness_toy.json
 
 # Python
 __pycache__/
