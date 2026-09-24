@@ -1,0 +1,122 @@
+{
+  "kind": "engine_correctness",
+  "timestamp": "20260924_222216",
+  "mode": "toy",
+  "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "torch_version": "2.7.1+cu128",
+  "reports": [
+    {
+      "name": "toy-continuous-vs-single-reference",
+      "num_requests": 6,
+      "served_tokens": 55,
+      "all_match": true,
+      "failures": 0,
+      "rows": [
+        {
+          "sid": 0,
+          "prompt_chars": 25,
+          "max_new_tokens": 5,
+          "generated": [
+            6,
+            12,
+            10,
+            8,
+            1
+          ],
+          "matches_reference": true
+        },
+        {
+          "sid": 1,
+          "prompt_chars": 29,
+          "max_new_tokens": 16,
+          "generated": [
+            1,
+            2,
+            6,
+            12,
+            10,
+            8,
+            1,
+            2,
+            6,
+            12,
+            10,
+            8,
+            1,
+            2,
+            6,
+            12
+          ],
+          "matches_reference": true
+        },
+        {
+          "sid": 2,
+          "prompt_chars": 24,
+          "max_new_tokens": 9,
+          "generated": [
+            12,
+            10,
+            8,
+            1,
+            2,
+            6,
+            12,
+            10,
+            8
+          ],
+          "matches_reference": true
+        },
+        {
+          "sid": 3,
+          "prompt_chars": 29,
+          "max_new_tokens": 7,
+          "generated": [
+            12,
+            10,
+            8,
+            1,
+            2,
+            6,
+            12
+          ],
+          "matches_reference": true
+        },
+        {
+          "sid": 4,
+          "prompt_chars": 33,
+          "max_new_tokens": 11,
+          "generated": [
+            12,
+            10,
+            8,
+            1,
+            2,
+            6,
+            12,
+            10,
+            8,
+            1,
+            2
+          ],
+          "matches_reference": true
+        },
+        {
+          "sid": 5,
+          "prompt_chars": 29,
+          "max_new_tokens": 7,
+          "generated": [
+            6,
+            12,
+            10,
+            12,
+            10,
+            12,
+            10
+          ],
+          "matches_reference": true
+        }
+      ]
+    }
+  ],
+  "all_passed": true
+}

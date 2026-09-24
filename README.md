@@ -230,7 +230,87 @@ tokens/s/slot），故投机相对基线的优势并未随 B 放大，per-slot �
 
 ---
 
-## 7. 目录结构
+## 7. Phase 2：连续批处理 / PagedAttention 推理引擎
+
+> 从零实现 vLLM 风格的服务引擎：**分页 KV Cache + 连续批处理**。本阶段只做引擎本身
+> （单模型调度），不包含投机解码 draft/verify —— 它作为承载未来投机批的底座。
+> 新增 `engine/` 包，复用 Phase-1 的 `specdec.utils`、采样器与 `make_plots` 出版级样式。
+
+### 7.1 核心机制
+
+| 机制 | 实现 | 点 |
+| --- | --- | --- |
+| **PagedAttention** | K/V 存于定长物理块，每序列用块表映射逻辑位置→物理块 | `engine/kv.py` + `engine/attention.py` |
+| **连续批处理** | 每步 prefill 新到请求 + 打包所有运行中序列做一次分页 decode，完成即释放块 | `engine/scheduler.py` |
+| **静态批基线** | 固定 batch、空闲槽空转（容量浪费的对照） | 同一 `PagedScheduler.run_static` |
+| **GQA** | `repeat_interleave` 将 kv_heads 扩到 q_heads | `attention.py::_expand_to_q_heads` |
+| **RoPE** | 手写，`rotate_half` + interleave 约定，`theta` 取自 config | `model.py::apply_rotary` |
+| **按样本回滚** | `truncate`/`clear`/`reset` 精确返还物理块 | `kv.py` |
+
+注意力采用 **“gather + SDPA”**：把某序列的物理块 gather 成稠密
+`(ctx_len, kv_heads, head_dim)`，得到真实 K/V 后再交给
+`torch.nn.functional.scaled_dot_product_attention`（decode 全前缀、prefill 因果掩码）。
+这一步关键：**与参考 `transformers` 解码器用同一个 CUDA kernel**，使 24 层 fp16 真实权重能
+逐 token 贪心完全一致；若用手写 einsum softmax，fp16 舍入差异会在几层内累积成 token 分歧。
+toy/引擎 oracle 对拍仍独立（`tests/test_attention.py` 以 SDPA 为参考）。
+
+### 7.2 引擎如何被证明正确
+
+- `tests/test_kv.py`：块分配 / 追加 / 截断回滚 / 释放 / 重置 / 利用率。
+- `tests/test_attention.py`：分页注意力 vs SDPA oracle 逐 token 一致。
+- `tests/test_scheduler.py`：连续/静态与**独立单序列贪心参考**等价（同输入同 seed，
+  批处理与错峰到达不得改变 token）；确定性；指标。
+- `scripts/run_engine_correctness.py --mode toy`：整个连续调度器逐序列与 batch=1 参考对拍；
+  `--mode real` 用真实 Qwen2.5 权重与 `transformers` 原生逐 token 贪心对拍。
+
+### 7.3 运行
+
+```bash
+# 引擎单元测试
+python -m pytest tests/test_kv.py tests/test_attention.py tests/test_scheduler.py -q
+
+# 正确性（toy 无需下载；real 需 Qwen 权重）
+python scripts/run_engine_correctness.py --mode toy --output-dir results/cpu
+python scripts/run_engine_correctness.py --mode real --model Qwen/Qwen2.5-0.5B --output-dir results/gpu
+
+# 服务基准（连续 vs 静态，JSON + 图）
+python scripts/run_engine_experiment.py --mode toy  --output-dir results/cpu
+python scripts/run_engine_experiment.py --mode real --model Qwen/Qwen2.5-0.5B --output-dir results/gpu
+```
+
+### 7.4 诚实的结果边界
+
+**toy 冒烟**（`num_requests=8`，`results/cpu/engine_serving_toy_*`）：连续批在
+**KV 物理块峰值**上显著更省（28 vs 38），但**吞吐略低于**静态（约 0.89×），槽位利用率
+连续 0.75 / 静态 0.81。这与理论预期一致但**不代表真实 serving**：2 层玩具模型固定满批 +
+少次 CUDA launch 压过了“动态批”的收益。
+
+**真实 serving**（`engine_serving_real_*.json`，Qwen2.5-0.5B / fp16 / RTX 4060 Laptop GPU，
+异构请求+错峰到达）：
+
+| 指标 | 连续批 | 静态批 | 结论 |
+| --- | --- | --- | --- |
+| 吞吐（相对） | **1.302×** | 1× | 连续批显著占优 —— 印证理论机理 |
+| 槽位利用率 | 0.738 | 0.796 | 静态满批对空槽空转的“虚高” |
+| KV 峰值物理块 | **27** | 42 | 连续批释放快，显存更省 |
+
+即：吞吐与显存双赢的方向在真实硬件上成立，与 toy 的 2 层假象相反。
+
+**真实正确性**（`engine_correctness_real.json`）：3 条提示词、每条 greedy 40 token，
+paged 引擎与 `transformers` 原生 **逐 token 完全一致**（all_passed=true）。
+
+沿程还修掉了三类真实权重适配 bug，备忘（详见代码注释）：
+1. **projection bias**：transformers 的 Qwen2 `attention_bias` 默认 `True`，q/k/v_proj 都带
+   bias；适配器曾用 `bias=False` 创建，24 层 × 3 个 bias 被静默当作 “unexpected” 丢弃 → prefill
+   token 全是垃圾。修复：读 `config.attention_bias` 创建 q/k/v_proj 带 bias。
+2. **decode 自注意力**：因果解码中位置 t 的查询必须观察 `0..t`（**含自身**）；原实现先把 KV
+   写在 attention 之后，使新 token 只观察 `0..t-1`。修复：先写 KV 再按 `ctx+1` 长度 gather。
+3. **fp16 注意力 kernel**：einsum softmax 与原生 SDPA 的 fp16 舍入不同，24 层累积后必然 div →
+   改走与原生同一个 SDPA kernel 后逐 token 位级一致。
+
+---
+
+## 8. 目录结构
 
 ```
 speculative-decoding-lab/
@@ -246,14 +326,24 @@ speculative-decoding-lab/
 │   ├── benchmark.py      # 计时/显存/接受率测量与 γ 扫描
 │   ├── analysis.py       # γ* 解析最优解与边际收益分析
 │   └── utils.py          # 日志、随机种子、JSON 序列化、CJK 字体
-├── scripts/              # CLI 入口（正确性 / 基准 / 扫描 / 批量实验 / 出图）
-├── tests/                # pytest：采样器单测 + 解码循环不变量
-└── results/              # JSON 报告与 PNG/PDF 图
+├── engine/               # Phase 2：连续批处理 / PagedAttention 推理引擎
+│   ├── config.py         # EngineConfig / SamplingConfig / Workload
+│   ├── kv.py             # BlockAllocator + PagedKVCache + 按样本回滚
+│   ├── attention.py      # 分页注意力（gather + SDPA）+ eager oracle
+│   ├── model.py          # PagedLM 协议 + 确定性 ToyPagedLM + RoPE
+│   ├── qwen.py           # Qwen2 真实权重分页适配器
+│   ├── scheduler.py      # 连续批处理 + 静态基线
+│   ├── benchmark.py      # 延迟 / TTFT / 内存 / 块利用率测量
+│   ├── sampler.py        # 复用 specdec.sampler 的薄封装
+│   └── utils.py          # 复用 specdec.utils 的再导出
+├── scripts/              # CLI 入口（正确性 / 基准 / 扫描 / 批量实验 / 引擎 / 3 类出图）
+├── tests/                # pytest：采样器 + 引擎（kv/attention/scheduler）+ 解码不变量
+└── results/              # JSON 报告与 PNG/PDF 图（cpu/ 与 gpu/ 分目录）
 ```
 
 ---
 
-## 8. 复现约定
+## 9. 复现约定
 
 - 所有随机性都来自显式 `--seed`（默认 `20260920`），采样统一在 CPU 上用同一 generator 完成，
   保证 CPU / CUDA 两条路径可比较。
@@ -263,7 +353,7 @@ speculative-decoding-lab/
 
 ---
 
-## 9. 已知局限
+## 10. 已知局限
 
 - 已实现**同序列批量**路径（`batch_speculative.py`，B 份相同 prompt、锁步前向）用于验证 bundle
   尺寸对 c 的影响；**异构 batch（不同提示词）仍需按样本独立回滚，是后续 Phase 2 工作**。批量
