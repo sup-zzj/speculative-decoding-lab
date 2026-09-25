@@ -1,0 +1,145 @@
+{
+  "kind": "spec_correctness",
+  "mode": "toy",
+  "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "torch_version": "2.7.1+cu128",
+  "seed": 20260925,
+  "gamma": 3,
+  "timestamp": "20260925_093319",
+  "reports": [
+    {
+      "name": "toy-spec-vs-plain-continuous",
+      "gamma": 3,
+      "num_requests": 6,
+      "served_tokens": 63,
+      "all_match": true,
+      "failures": 0,
+      "rows": [
+        {
+          "sid": 0,
+          "prompt_len": 29,
+          "max_new_tokens": 11,
+          "matches": true,
+          "first_divergence_at": -1,
+          "num_tokens": 11,
+          "spec_generated": [
+            2,
+            12,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11
+          ]
+        },
+        {
+          "sid": 1,
+          "prompt_len": 25,
+          "max_new_tokens": 13,
+          "matches": true,
+          "first_divergence_at": -1,
+          "num_tokens": 13,
+          "spec_generated": [
+            2,
+            12,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11
+          ]
+        },
+        {
+          "sid": 2,
+          "prompt_len": 29,
+          "max_new_tokens": 16,
+          "matches": true,
+          "first_divergence_at": -1,
+          "num_tokens": 16,
+          "spec_generated": [
+            7,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11
+          ]
+        },
+        {
+          "sid": 3,
+          "prompt_len": 24,
+          "max_new_tokens": 8,
+          "matches": true,
+          "first_divergence_at": -1,
+          "num_tokens": 8,
+          "spec_generated": [
+            3,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7
+          ]
+        },
+        {
+          "sid": 4,
+          "prompt_len": 33,
+          "max_new_tokens": 4,
+          "matches": true,
+          "first_divergence_at": -1,
+          "num_tokens": 4,
+          "spec_generated": [
+            3,
+            7,
+            11,
+            7
+          ]
+        },
+        {
+          "sid": 5,
+          "prompt_len": 29,
+          "max_new_tokens": 11,
+          "matches": true,
+          "first_divergence_at": -1,
+          "num_tokens": 11,
+          "spec_generated": [
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11,
+            7,
+            11
+          ]
+        }
+      ]
+    }
+  ],
+  "all_passed": true
+}

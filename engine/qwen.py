@@ -19,7 +19,11 @@ import torch
 from torch import nn
 from typing import Any, List, Optional, Sequence
 
-from .attention import paged_attention_decode, paged_attention_prefill_chunk
+from .attention import (
+    paged_attention_decode,
+    paged_attention_extend,
+    paged_attention_prefill_chunk,
+)
 from .kv import PagedKVCache
 from .model import RMSNorm, apply_rotary, make_rotary_cache
 from .utils import setup_logger
@@ -123,6 +127,43 @@ class QwenDecoderLayer(nn.Module):
             q, kv, layer_index, seq_ids, [int(c) + 1 for c in ctx_lengths], qh
         )
         hidden = residual + attn.o_proj(out.view(B, -1))
+        residual = hidden
+        hidden = residual + self.mlp(self.post_attention_layernorm(hidden))
+        return hidden
+
+    def extend_block(
+        self,
+        hidden: torch.Tensor,
+        kv: PagedKVCache,
+        layer_index: int,
+        seq_ids: Sequence[int],
+        start_positions: Sequence[int],
+        cos: torch.Tensor,
+        sin: torch.Tensor,
+    ) -> torch.Tensor:
+        """Advance a whole chunk of fresh tokens per row; return ``(B, chunk, H)``.
+
+        Structurally identical to :meth:`decode_step` but batched over a per-sequence
+        chunk (see ``engine.model.PagedDecoderLayer.extend_block``). Only K is
+        RoPE-rotated; the chunk's K/V is written FIRST (positions
+        ``start_positions[b] .. start_positions[b]+chunk-1``) via
+        :func:`paged_attention_extend`.
+        """
+        B, chunk, _ = hidden.shape
+        attn = self.self_attn
+        qh, kh, d = attn.num_heads, attn.num_kv_heads, attn.head_dim
+        x = self.input_layernorm(hidden)
+        q_raw = attn.q_proj(x).view(B, chunk, qh, d)
+        k_raw = attn.k_proj(x).view(B, chunk, kh, d)
+        v_raw = attn.v_proj(x).view(B, chunk, kh, d)
+        q = apply_rotary(q_raw, sin[:, :, None, :], cos[:, :, None, :])
+        k = apply_rotary(k_raw, sin[:, :, None, :], cos[:, :, None, :])
+        for b in range(B):
+            base = int(start_positions[b])
+            for j in range(chunk):
+                kv.write(layer_index, seq_ids[b], base + j, k[b, j], v_raw[b, j])
+        out = paged_attention_extend(q, kv, layer_index, seq_ids, start_positions, qh)
+        hidden = hidden + attn.o_proj(out.reshape(B, chunk, -1))
         residual = hidden
         hidden = residual + self.mlp(self.post_attention_layernorm(hidden))
         return hidden
@@ -277,6 +318,36 @@ class QwenPagedModel(nn.Module):
             )
         return self.lm_head(self.norm(hidden))
 
+    def decode_block(
+        self,
+        input_ids_2d: torch.Tensor,
+        kv: PagedKVCache,
+        seq_ids: Sequence[int],
+        start_positions: Sequence[int],
+    ) -> torch.Tensor:
+        """Decode a chunk of consecutive tokens per sequence; return ``(B, chunk, V)``.
+
+        Same contract as ``ToyPagedLM.decode_block``: row ``b`` holds the ``chunk``
+        tokens occupying logical positions ``start_positions[b] ..`` in ``kv``. RoPE
+        is fetched per cell with :meth:`_rope_for` (``(B, chunk, 2, d)``) split into
+        ``cos``/``sin``, then every layer's :meth:`QwenDecoderLayer.extend_block` is
+        applied.
+        """
+        self.forward_calls += 1
+        B, chunk = input_ids_2d.shape
+        hidden = self.embed_tokens(input_ids_2d)
+        pos = torch.arange(chunk, dtype=torch.long, device=self.device).unsqueeze(0)
+        pos = pos.expand(B, chunk) + torch.tensor(
+            start_positions, dtype=torch.long, device=self.device
+        ).unsqueeze(1)
+        cs = self._rope_for(pos)                      # (B, chunk, 2, d)
+        cos, sin = cs[..., 0, :], cs[..., 1, :]       # (B, chunk, d): slice the 2-axis
+        for index, layer in enumerate(self.layers):
+            hidden = layer.extend_block(
+                hidden, kv, index, seq_ids, start_positions, cos, sin
+            )
+        return self.lm_head(self.norm(hidden))
+
 
 # ------------------------------------------------------------- loader helpers
 def resolve_local(model_id: str, cache_dir: str) -> str:
@@ -337,3 +408,24 @@ def build_paged_model(
         model.head_dim, dtype,
     )
     return model
+
+
+def load_pair(
+    draft_id: str,
+    target_id: str,
+    cache_dir: str,
+    device: torch.device,
+    dtype: torch.dtype,
+) -> tuple["QwenPagedModel", "QwenPagedModel"]:
+    """Load the draft and target Qwen models into the paged engine.
+
+    Both models assume a shared tokenizer (each carries its own ``.tokenizer``; the
+    draft's is canonical). Loading sequential via :func:`build_paged_model` frees the
+    ``transformers`` copy after each model is transferred, so peak host memory stays
+    low for a draft + target pair. Returns ``(draft_model, target_model)``.
+    """
+    target = build_paged_model(target_id, cache_dir, device, dtype)
+    torch.cuda.empty_cache() if device.type == "cuda" else None
+    draft = build_paged_model(draft_id, cache_dir, device, dtype)
+    torch.cuda.empty_cache() if device.type == "cuda" else None
+    return draft, target

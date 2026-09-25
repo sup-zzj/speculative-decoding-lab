@@ -70,6 +70,12 @@ class SchedulerResult:
     kv_peak_bytes: int = 0
     peak_memory_mb: Optional[float] = None
     sampling: str = "greedy"
+    #: Speculative-specific telemetry (unused by the plain schedulers).
+    draft_kv_peak_blocks: int = 0
+    draft_forward_calls: int = 0
+    tokens_per_round: List[int] = field(default_factory=list)
+    mean_acceptance: Optional[float] = None
+    mean_tokens_per_round: Optional[float] = None
 
     @property
     def throughput_tokens_per_s(self) -> Optional[float]:

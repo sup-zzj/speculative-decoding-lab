@@ -330,15 +330,17 @@ speculative-decoding-lab/
 │   ├── config.py         # EngineConfig / SamplingConfig / Workload
 │   ├── kv.py             # BlockAllocator + PagedKVCache + 按样本回滚
 │   ├── attention.py      # 分页注意力（gather + SDPA）+ eager oracle
-│   ├── model.py          # PagedLM 协议 + 确定性 ToyPagedLM + RoPE
-│   ├── qwen.py           # Qwen2 真实权重分页适配器
-│   ├── scheduler.py      # 连续批处理 + 静态基线
+│   ├── model.py          # PagedLM 协议 + 确定性 ToyPagedLM + RoPE + decode_block
+│   ├── qwen.py           # Qwen2 真实权重分页适配器 + load_pair + decode_block
+│   ├── scheduler.py      # 连续批处理 + 静态基线（Phase 2）
+│   ├── spec_scheduler.py # Phase 3：投机×连续批 SpeculativePagedScheduler + batch_accept
 │   ├── benchmark.py      # 延迟 / TTFT / 内存 / 块利用率测量
 │   ├── sampler.py        # 复用 specdec.sampler 的薄封装
 │   └── utils.py          # 复用 specdec.utils 的再导出
-├── scripts/              # CLI 入口（正确性 / 基准 / 扫描 / 批量实验 / 引擎 / 3 类出图）
-├── tests/                # pytest：采样器 + 引擎（kv/attention/scheduler）+ 解码不变量
-└── results/              # JSON 报告与 PNG/PDF 图（cpu/ 与 gpu/ 分目录）
+├── scripts/              # CLI 入口（正确性 / 基准 / 扫描 / 批量实验 / 引擎 / spec / 3 类出图）
+│   └── run_spec_correctness.py / run_spec_experiment.py / make_spec_plots.py  # Phase 3
+├── tests/                # pytest：采样器 + 引擎（kv/attention/scheduler）+ spec 解码不变量
+└── results/              # JSON 报告与 PNG/PDF 图（cpu/ 与 gpu/ 分目录，spec_* 为 Phase 3）
 ```
 
 ---
@@ -356,12 +358,86 @@ speculative-decoding-lab/
 ## 10. 已知局限
 
 - 已实现**同序列批量**路径（`batch_speculative.py`，B 份相同 prompt、锁步前向）用于验证 bundle
-  尺寸对 c 的影响；**异构 batch（不同提示词）仍需按样本独立回滚，是后续 Phase 2 工作**。批量
-  路径未捕获 CUDA Graph 引擎，且仅支持 greedy（采样模式的批量拒绝采样未验证）。
+  尺寸对 c 的影响（见上）。**异构 batch（不同提示词）的批量投机解码已由 Phase 3 引擎完成**——
+  见 §11；同序列路径未捕获 CUDA Graph 引擎，是 Phase 1 的早图，与 Phase 3 的 Paged 引擎无关。
 - 跨 tokenizer 组合通过文本级路径（`text_speculative.py`）保证 greedy 正确性，但实测无加速
   （c≈1.02 + 每轮 KV 重建开销），采样模式（非 greedy）在跨词表时无定义，仅支持 greedy。
+  Phase 3 的 Paged 引擎要求 draft/target 共享同一个 tokenizer（token 级投机）。
 - 未实现 tree attention / Medusa 式多头草稿，`γ*` 分析仅针对链式 draft。
 - toy 模型的精确枚举限于 `词表^seq_len <= 4096`，更长的联合分布无法枚举。
+
+---
+
+## 11. Phase 3：投机解码 × 连续批处理 / PagedAttention 引擎
+
+Phase 1（单序列投机）+ Phase 2（连续批 + 分页 KV）在 §10 之前的边界是**异构 batch 的批量投机
+尚未实现**。Phase 3 把它们融合：`SpeculativePagedScheduler` 在每一轮 decode 内做一次
+draft-then-verify，draft 与 target 各自持有独立 `PagedKVCache`，共享同一份序列记账。
+
+### 11.1 缓存不变量（每个模型各一份）
+
+```
+kv.seq_lengths[sid] == len(prompt) + len(generated) - 1
+```
+
+即：完整 prompt + 所有**已提交**生成 token 常驻 cache，最后一个“pending” token 刻意不写入。
+每轮 draft 从 pending 提议 γ 个 token，target 一次 `decode_block([pending] + proposals)`
+（γ+1 个位置）验证，拒绝采样决定实际提交数量，随后两个 cache 都 `kv.truncate` 回卷到
+`len(prompt)+len(generated)-1` —— 该不变量在每轮末重新成立。**每轮 target 只做一次前向**，
+与 Phase 1 的 load-bearing 不变量严格一致。
+
+### 11.2 编辑器新增/改动
+
+- `engine/attention.py` → `paged_attention_extend`：按序列把外部 prefix + 新 chunk 接成
+  `start+j` 长度做 masked 注意力。
+- `engine/model.py` / `engine/qwen.py` → `decode_block`/`extend_block`：整块推进若干 fresh
+  token，先写 K/V 再注意力（复用 Phase 2 的“先写 KV 再按 ctx+1 长度 gather”修正）。
+- `engine/spec_scheduler.py`（新）→ `SpeculativePagedScheduler` + 模块级 `batch_accept`；
+  直接用 `specdec.sampler` 的 `acceptance_probability`/`residual_distribution`/`sample_token`
+  纯函数，拒绝时从 `(p-q)_+` 重采样。
+- `engine/scheduler.py` → `SchedulerResult` 增 draft 前向/块峰值、每轮 token、接受率字段。
+- `engine/qwen.py` → `load_pair(draft_id, target_id)` 同时加载两个 Paged 模型。
+
+### 11.3 正确性证明
+
+- 单元测试 `tests/test_paged_attention_extend.py` / `test_spec_accept.py` / `test_spec_scheduler.py`。
+- `scripts/run_spec_correctness.py`：**toy** 张三抽取等价（不同容量 draft，greedy 逐 token 相等），
+  **real** 与 `transformers` 原生贪婪逐 token 对拍。result：`spec_correctness_toy.json` /
+  `spec_correctness_real.json` 均 `all_passed=true`（real 在 RTX 4060 Laptop GPU 上 3 条提示词、
+  greedy 40 token，spec 与原生**完全一致**）。
+
+### 11.4 真实 serving 基准（诚实结论）
+
+`scripts/run_spec_experiment.py`（real，Qwen2.5-0.5B→1.5B，fp16，RTX 4060 Laptop GPU，
+8 请求错峰到达，`repeats=2`，greedy）。`make_spec_plots.py` 出图见 `results/gpu/figures/`。
+
+| γ | 投机吞吐(tok/s) | 基线(tok/s) | 吞吐比 | target 前向 | draft 前向 | tokens/轮 | 接受率 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 | 9.59 | 19.43 | **0.493** | 11 | ~26 | 2.18 | 0.726 |
+| 3 | 8.62 | 19.43 | **0.444** | 10 | 41 | 2.45 | 0.613 |
+
+**投机解码语义上是有效的**：target 前向次数几乎减半（基线 23 → 投机 10~11），每轮提交
+2.2~2.5 个 token、接受率 0.61~0.73，greedy 下与基线逐 token 等价——draft/verify 机制在
+异构连续批里完全正确地收敛。**但墙钟吞吐反而更低（约 0.44×~0.49×）**，与 Phase 1 结论一致：
+无 CUDA Graph 时 draft 的 γ 步**顺序**前向（`draft_forward_calls` 达 26~41）kernel launch
+开销无法被“每轮多 token”摊薄，反而把每 round 延迟拖长。这正是 Power/Medusa 等后续工作用
+图捕获+树注意力要去掉的常数。
+
+显存：投机需同时常驻 draft+target 两套 KV，峰值从基线 6.4GB 升到 7.6GB（draft cache 约 +1.2GB）。
+
+### 11.5 运行命令
+
+```bash
+# 单元测试
+python -m pytest tests/test_paged_attention_extend.py tests/test_spec_accept.py tests/test_spec_scheduler.py
+# 正确性（toy / real）
+python scripts/run_spec_correctness.py --mode toy
+python scripts/run_spec_correctness.py --mode real --draft-model Qwen/Qwen2.5-0.5B --target-model Qwen/Qwen2.5-1.5B --output-dir results/gpu
+# 服务基准 + γ 扫描
+python scripts/run_spec_experiment.py --mode real --gamma 2,3 --max-batch 4 --num-requests 8 --repeats 2 --output-dir results/gpu
+# 出图
+python scripts/make_spec_plots.py --dir results/gpu
+```
 
 ## License
 

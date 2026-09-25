@@ -1,0 +1,220 @@
+{
+  "kind": "spec_experiment",
+  "mode": "real",
+  "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "sampling": "greedy",
+  "gamma": 2,
+  "seed": 20260920,
+  "config": {
+    "engine": {
+      "model_id": "models\\Qwen2.5-0.5B",
+      "device": "auto",
+      "dtype": "auto",
+      "cache_dir": "models",
+      "block_size": 16,
+      "max_num_blocks": 256,
+      "max_batch": 4
+    },
+    "sampling": {
+      "temperature": 0.0,
+      "mode": "greedy"
+    },
+    "workload": {
+      "prompts": [
+        "The key idea behind a paged attention server is",
+        "In a large-scale inference system, continuous batching",
+        "The GPU is most underutilised during the decode phase",
+        "A KV cache must be re-layouted to fit dynamic request",
+        "Scheduling matters more than raw FLOPs for serving",
+        "When one request finishes early its slot should be reused"
+      ],
+      "num_requests": 8,
+      "min_tokens": 6,
+      "max_tokens": 24,
+      "arrival_window": 3,
+      "seed": 20260920
+    },
+    "mode": "real",
+    "gamma_list": [
+      2,
+      3
+    ],
+    "repeats": 2,
+    "expected_draft_new_tokens": null
+  },
+  "repeats_count": 2,
+  "baseline_repeats": [
+    {
+      "makespan_ms": 6081.539,
+      "throughput_tokens_per_s": 17.43,
+      "target_forward_calls": 23,
+      "draft_forward_calls": 0,
+      "kv_peak_blocks": 10,
+      "draft_kv_peak_blocks": 0,
+      "block_util": 0.0,
+      "avg_active_batch": 4.174,
+      "mean_tokens_per_round": null,
+      "mean_acceptance": null,
+      "peak_memory_mb": 6388.23
+    },
+    {
+      "makespan_ms": 4946.519,
+      "throughput_tokens_per_s": 21.429,
+      "target_forward_calls": 23,
+      "draft_forward_calls": 0,
+      "kv_peak_blocks": 10,
+      "draft_kv_peak_blocks": 0,
+      "block_util": 0.0,
+      "avg_active_batch": 4.174,
+      "mean_tokens_per_round": null,
+      "mean_acceptance": null,
+      "peak_memory_mb": 6388.23
+    }
+  ],
+  "speculative_repeats": [
+    {
+      "makespan_ms": 11089.428,
+      "throughput_tokens_per_s": 9.559,
+      "target_forward_calls": 11,
+      "draft_forward_calls": 44,
+      "kv_peak_blocks": 10,
+      "draft_kv_peak_blocks": 10,
+      "block_util": 0.0,
+      "avg_active_batch": 3.909,
+      "mean_tokens_per_round": 2.1777777777777776,
+      "mean_acceptance": 0.725925925925926,
+      "peak_memory_mb": 7469.34
+    },
+    {
+      "makespan_ms": 11021.63,
+      "throughput_tokens_per_s": 9.617,
+      "target_forward_calls": 11,
+      "draft_forward_calls": 44,
+      "kv_peak_blocks": 10,
+      "draft_kv_peak_blocks": 10,
+      "block_util": 0.0,
+      "avg_active_batch": 3.909,
+      "mean_tokens_per_round": 2.1777777777777776,
+      "mean_acceptance": 0.725925925925926,
+      "peak_memory_mb": 7469.34
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "makespan_ms": {
+        "mean": 5514.029,
+        "std": 802.5803387823548,
+        "n": 2
+      },
+      "throughput_tokens_per_s": {
+        "mean": 19.429499999999997,
+        "std": 2.8277200179650026,
+        "n": 2
+      },
+      "target_forward_calls": {
+        "mean": 23.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "draft_forward_calls": {
+        "mean": 0.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "kv_peak_blocks": {
+        "mean": 10.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "draft_kv_peak_blocks": {
+        "mean": 0.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "block_util": {
+        "mean": 0.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "avg_active_batch": {
+        "mean": 4.174,
+        "std": 0.0,
+        "n": 2
+      },
+      "mean_tokens_per_round": {
+        "mean": null,
+        "std": null,
+        "n": 0
+      },
+      "mean_acceptance": {
+        "mean": null,
+        "std": null,
+        "n": 0
+      },
+      "peak_memory_mb": {
+        "mean": 6388.23,
+        "std": 0.0,
+        "n": 2
+      }
+    },
+    "speculative": {
+      "makespan_ms": {
+        "mean": 11055.528999999999,
+        "std": 47.94042555088603,
+        "n": 2
+      },
+      "throughput_tokens_per_s": {
+        "mean": 9.588000000000001,
+        "std": 0.041012193308820895,
+        "n": 2
+      },
+      "target_forward_calls": {
+        "mean": 11.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "draft_forward_calls": {
+        "mean": 44.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "kv_peak_blocks": {
+        "mean": 10.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "draft_kv_peak_blocks": {
+        "mean": 10.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "block_util": {
+        "mean": 0.0,
+        "std": 0.0,
+        "n": 2
+      },
+      "avg_active_batch": {
+        "mean": 3.909,
+        "std": 0.0,
+        "n": 2
+      },
+      "mean_tokens_per_round": {
+        "mean": 2.1777777777777776,
+        "std": 0.0,
+        "n": 2
+      },
+      "mean_acceptance": {
+        "mean": 0.725925925925926,
+        "std": 0.0,
+        "n": 2
+      },
+      "peak_memory_mb": {
+        "mean": 7469.34,
+        "std": 0.0,
+        "n": 2
+      }
+    },
+    "spec_vs_baseline_throughput_ratio": 0.49347641473017845
+  },
+  "timestamp": "20260925_093929"
+}

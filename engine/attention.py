@@ -165,3 +165,52 @@ def paged_attention_prefill_chunk(
             out = torch.cat((out, pad), dim=0)
         outputs.append(out)
     return torch.stack(outputs, dim=0)  # B, chunk_len, q_heads, d
+
+
+def paged_attention_extend(
+    query_3d: torch.Tensor,
+    kv: PagedKVCache,
+    layer: int,
+    seq_ids: Sequence[int],
+    start_positions: Sequence[int],
+    num_q_heads: int,
+) -> torch.Tensor:
+    """Attend a chunk of fresh tokens against an existing prefix plus prior rows.
+
+    ``query_3d`` is ``(B, chunk, num_q_heads, d)`` (already projected + RoPE'd).
+    Each sequence already had its ``prefix + new chunk`` K/V written to ``kv``, so
+    ``kv.seq_lengths[sid] == start_positions[b] + chunk``. ``start_positions[b]`` is
+    the logical position where sequence ``b``'s chunk begins (its committed prefix
+    length). Row ``j`` of sequence ``b`` therefore sits at logical position
+    ``start_positions[b] + j`` and attends every position ``0 .. start_positions[b] + j``
+    (the full external prefix plus the chunk rows before ``j``).
+
+    Returns ``(B, chunk, num_q_heads, d)``. Computed as one masked
+    :func:`torch.nn.functional.scaled_dot_product_attention` per sample with a boolean
+    causal mask (``mask[j, i] = i <= start+j``), so it stays bit-consistent with the
+    other gather-based kernels.
+    """
+    B, chunk, _, _d = query_3d.shape
+    outputs: List[torch.Tensor] = []
+    for b in range(B):
+        start = int(start_positions[b])
+        length = start + chunk
+        key_value = gather_ctx(kv, layer, seq_ids[b], length)
+        key = _expand_to_q_heads(key_value[0], num_q_heads)    # (L, qh, d)
+        value = _expand_to_q_heads(key_value[1], num_q_heads)
+        # Causal mask: query row ``j`` (absolute position ``start+j``) attends key
+        # rows ``0 .. start+j`` inclusive. Building it by row keeps the mask cheap
+        # and correct even when ``length`` (and so the matrix) is small.
+        mask = torch.zeros(
+            (chunk, length), dtype=torch.bool, device=query_3d.device
+        )
+        for j in range(chunk):
+            mask[j, : start + j + 1] = True
+        q4 = query_3d[b].transpose(0, 1).unsqueeze(0)   # (1, qh, chunk, d)
+        k4 = key.transpose(0, 1).unsqueeze(0)           # (1, qh, L, d)
+        v4 = value.transpose(0, 1).unsqueeze(0)         # (1, qh, L, d)
+        attn = F.scaled_dot_product_attention(
+            q4, k4, v4, attn_mask=mask.unsqueeze(0)
+        )
+        outputs.append(attn[0].transpose(0, 1))          # (chunk, qh, d)
+    return torch.stack(outputs, dim=0)  # (B, chunk, qh, d)

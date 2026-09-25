@@ -26,7 +26,11 @@ from typing import Any, Dict, List, Optional, Sequence
 import torch
 from torch import nn
 
-from .attention import paged_attention_decode, paged_attention_prefill_chunk
+from .attention import (
+    paged_attention_decode,
+    paged_attention_extend,
+    paged_attention_prefill_chunk,
+)
 from .kv import PagedKVCache
 from .utils import setup_logger
 
@@ -144,6 +148,47 @@ class PagedDecoderLayer(nn.Module):
         attend_lengths = [int(c) + 1 for c in ctx_lengths]
         out = paged_attention_decode(q, kv, layer_index, seq_ids, attend_lengths, self.num_q_heads)
         hidden = residual + self.o(out.view(B, -1))
+        residual = hidden
+        hidden = residual + self.mlp(self.post_attention_layernorm(hidden))
+        return hidden
+
+    def extend_block(
+        self,
+        hidden: torch.Tensor,
+        kv: PagedKVCache,
+        layer_index: int,
+        seq_ids: Sequence[int],
+        start_positions: Sequence[int],
+        cos: torch.Tensor,
+        sin: torch.Tensor,
+    ) -> torch.Tensor:
+        """Advance a whole chunk of fresh tokens per row; return ``(B, chunk, H)``.
+
+        Mirrors :meth:`decode_step` but feeds ``chunk`` consecutive tokens per
+        sequence: row ``b`` writes its ``start_positions[b] .. start_positions[b]+chunk-1``
+        K/V into ``kv`` (RoPE vertex at ``start_positions[b]+j``) and then attends every
+        position up to and including each row (see :func:`paged_attention_extend`).
+        ``cos``/``sin`` broadcast like the prefill path (``(B, chunk, d)``, expanded
+        over heads).
+        """
+        B, chunk, _ = hidden.shape
+        residual = hidden
+        x = self.input_layernorm(hidden)
+        q_raw = self.q(x).view(B, chunk, self.num_q_heads, self.head_dim)
+        k_raw = self.k(x).view(B, chunk, self.num_kv_heads, self.head_dim)
+        v_raw = self.v(x).view(B, chunk, self.num_kv_heads, self.head_dim)
+        q = apply_rotary(q_raw, sin[:, :, None, :], cos[:, :, None, :])
+        k = apply_rotary(k_raw, sin[:, :, None, :], cos[:, :, None, :])
+        # Write the whole chunk's K/V FIRST (positions start_positions[b]+j), then
+        # attend the prefix plus rows ``<= start_positions[b]+j`` inclusively.
+        for b in range(B):
+            base = int(start_positions[b])
+            for j in range(chunk):
+                kv.write(layer_index, seq_ids[b], base + j, k[b, j], v_raw[b, j])
+        out = paged_attention_extend(
+            q, kv, layer_index, seq_ids, start_positions, self.num_q_heads
+        )
+        hidden = residual + self.o(out.reshape(B, chunk, -1))
         residual = hidden
         hidden = residual + self.mlp(self.post_attention_layernorm(hidden))
         return hidden
@@ -290,6 +335,36 @@ class ToyPagedLM(nn.Module):
                 hidden, kv, index, seq_ids, ctx_lengths, cos, sin
             )
         return self.lm_head(self.norm(hidden))
+
+    def decode_block(
+        self,
+        input_ids_2d: torch.Tensor,
+        kv: PagedKVCache,
+        seq_ids: Sequence[int],
+        start_positions: Sequence[int],
+    ) -> torch.Tensor:
+        """Decode a chunk of consecutive tokens per sequence; return ``(B, chunk, V)``.
+
+        ``input_ids_2d`` is ``(B, chunk)``; row ``b`` holds the tokens that occupy
+        logical positions ``start_positions[b] .. start_positions[b]+chunk-1`` in
+        ``kv``. Every row's K/V for the chunk is written (and attended) through each
+        layer's :meth:`PagedDecoderLayer.extend_block`, then normalized and projected
+        to ``(B, chunk, V)`` next-token logits.
+        """
+        self.forward_calls += 1
+        B, chunk = input_ids_2d.shape
+        hidden = self.embed_tokens(input_ids_2d)          # (B, chunk, H)
+        pos = torch.arange(chunk, dtype=torch.long, device=self.device).unsqueeze(0)
+        pos = pos.expand(B, chunk) + torch.tensor(
+            start_positions, dtype=torch.long, device=self.device
+        ).unsqueeze(1)                                     # (B, chunk)
+        cos = self._cos_sin[pos, 0]                        # (B, chunk, d)
+        sin = self._cos_sin[pos, 1]
+        for index, layer in enumerate(self.layers):
+            hidden = layer.extend_block(
+                hidden, kv, index, seq_ids, start_positions, cos, sin
+            )
+        return self.lm_head(self.norm(hidden))             # (B, chunk, V)
 
     def _prefill_layer(
         self,
